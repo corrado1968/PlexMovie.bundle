@@ -276,7 +276,21 @@ class PlexMovieAgent(Agent.Movies):
 
         if len(elements) == 3:
           metadata.originally_available_at = Datetime.ParseDate(movie.get('originally_available_at')).date()
+    
+      #title in different language (lang)
+      for new_title in movie.xpath('title'):
+        newtitleLang = new_title.get('lang')
+        newtitleName = new_title.get('title')
+        if newtitleLang == lang:
+          metadata.title = newtitleName
+          break
       
+      #add Title in Original lang to DB
+      metadata.original_title = movie.get('title')
+
+      # To view the original title in plex client
+      metadata.tagline=metadata.original_title
+  
     except:
       print "Error obtaining Plex movie data for", guid
 
