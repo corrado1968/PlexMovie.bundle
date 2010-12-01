@@ -59,10 +59,14 @@ class PlexMovieAgent(Agent.Movies):
     GOOGLE_JSON_QUOTES = GOOGLE_JSON_URL % (self.getPublicIP(), String.Quote('"' + normalizedName + searchYear + '"', usePlus=True)) + '+site:imdb.com'
     GOOGLE_JSON_NOQUOTES = GOOGLE_JSON_URL % (self.getPublicIP(), String.Quote(normalizedName + searchYear, usePlus=True)) + '+site:imdb.com'
     GOOGLE_JSON_NOSITE = GOOGLE_JSON_URL % (self.getPublicIP(), String.Quote(normalizedName + searchYear, usePlus=True)) + '+imdb.com'
-    
+    if lang == Locale.Language.Italian:
+       GOOGLE_JSON_QUOTES_LANG = GOOGLE_JSON_URL % (self.getPublicIP(), String.Quote('"' + normalizedName + searchYear + '"', usePlus=True)) + '+site:imdb.it'
+       GOOGLE_JSON_NOQUOTES_LANG = GOOGLE_JSON_URL % (self.getPublicIP(), String.Quote(normalizedName + searchYear, usePlus=True)) + '+site:imdb.it'
+       GOOGLE_JSON_NOSITE_LANG = GOOGLE_JSON_URL % (self.getPublicIP(), String.Quote(normalizedName + searchYear, usePlus=True)) + '+imdb.it'
+   
     subsequentSearchPenalty = 0
     
-    for s in [GOOGLE_JSON_QUOTES, GOOGLE_JSON_NOQUOTES]:
+    for s in [GOOGLE_JSON_QUOTES, GOOGLE_JSON_NOQUOTES, GOOGLE_JSON_QUOTES_LANG, GOOGLE_JSON_NOQUOTES_LANG]:
       if s == GOOGLE_JSON_QUOTES and (media.name.count(' ') == 0 or media.name.count('&') > 0 or media.name.count(' and ') > 0):
         # no reason to run this test, plus it screwed up some searches
         continue 
@@ -79,7 +83,6 @@ class PlexMovieAgent(Agent.Movies):
           
         # Now walk through the results.    
         for r in jsonObj:
-          
           # Get data.
           url = r['unescapedUrl']
           title = r['titleNoFormatting']
@@ -131,15 +134,13 @@ class PlexMovieAgent(Agent.Movies):
               if idMap.has_key(id):
                 continue
                 
-              idMap[id] = True
-              
               # Check to see if the item's release year is in the future, if so penalize.
               if imdbYear > datetime.datetime.now().year:
                 Log(imdbName + ' penalizing for future release date')
                 scorePenalty += 25
             
               # Check to see if the hinted year is different from imdb's year, if so penalize.
-              elif media.year and int(media.year) != int(imdbYear): 
+              elif media.year and imdbYear and int(media.year) != int(imdbYear): 
                 Log(imdbName + ' penalizing for hint year and imdb year being different')
                 yearDiff = abs(int(media.year)-(int(imdbYear)))
                 if yearDiff == 1:
@@ -150,7 +151,7 @@ class PlexMovieAgent(Agent.Movies):
                   scorePenalty += 15
                   
               # Bonus (or negatively penalize) for year match.
-              elif media.year and int(media.year) != int(imdbYear): 
+              elif media.year and imdbYear and int(media.year) != int(imdbYear): 
                 scorePenalty += -5
               
               # It's a video game, run away!
@@ -170,6 +171,7 @@ class PlexMovieAgent(Agent.Movies):
                 scorePenalty += 25
               
               # Finally, add the result.
+              idMap[id] = True
               results.Append(MetadataSearchResult(id = id, name  = imdbName, year = imdbYear, lang  = lang, score = score - (scorePenalty + subsequentSearchPenalty)))
             except:
               Log('Exception processing IMDB Result')
@@ -279,7 +281,7 @@ class PlexMovieAgent(Agent.Movies):
 
         if len(elements) == 3:
           metadata.originally_available_at = Datetime.ParseDate(movie.get('originally_available_at')).date()
-      
+          
     #************START NEW SECTION****************
       
       #title in language (lang)
@@ -294,7 +296,7 @@ class PlexMovieAgent(Agent.Movies):
       metadata.original_title = movie.get('title')
       metadata.tagline=metadata.original_title
       
-      #************END NEW SECTION****************
+      #************END NEW SECTION****************      
       
     except:
       print "Error obtaining Plex movie data for", guid
