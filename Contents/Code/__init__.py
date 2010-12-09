@@ -7,7 +7,7 @@ GOOGLE_JSON_URL = 'http://ajax.googleapis.com/ajax/services/search/web?v=1.0&use
 FREEBASE_URL    = 'http://freebase.plexapp.com'
 PLEXMOVIE_URL   = 'http://plexmovie.plexapp.com'
 
-SCORE_THRESHOLD_IGNORE         = 85
+SCORE_THRESHOLD_IGNORE         = 55
 SCORE_THRESHOLD_IGNORE_PENALTY = 100 - SCORE_THRESHOLD_IGNORE
 SCORE_THRESHOLD_IGNORE_PCT = float(SCORE_THRESHOLD_IGNORE_PENALTY)/100
 
@@ -201,7 +201,7 @@ class PlexMovieAgent(Agent.Movies):
 
 
     doGoogleSearch = False
-    if len(results) == 0 or bestCacheHitScore < SCORE_THRESHOLD_IGNORE:
+    if len(results) == 0 or bestCacheHitScore <= SCORE_THRESHOLD_IGNORE:
       doGoogleSearch = True
 
     Log("PLEXMOVIE INFO RETRIEVAL: FINDBYID: %s CACHE: %s SEARCH_ENGINE: %s" % (findByIdCalled, cacheConsulted, doGoogleSearch))
@@ -217,8 +217,8 @@ class PlexMovieAgent(Agent.Movies):
        GOOGLE_JSON_NOSITE_LANG = GOOGLE_JSON_URL % (self.getPublicIP(), String.Quote(normalizedName + searchYear, usePlus=True)) + '+imdb.it'
    
       subsequentSearchPenalty = 0
-    
-      for s in [GOOGLE_JSON_QUOTES, GOOGLE_JSON_NOQUOTES, GOOGLE_JSON_QUOTES_LANG, GOOGLE_JSON_NOQUOTES_LANG]:
+      
+      for s in [GOOGLE_JSON_QUOTES_LANG, GOOGLE_JSON_NOQUOTES_LANG, GOOGLE_JSON_QUOTES, GOOGLE_JSON_NOQUOTES]:
         if s == GOOGLE_JSON_QUOTES and (media.name.count(' ') == 0 or media.name.count('&') > 0 or media.name.count(' and ') > 0):
           # no reason to run this test, plus it screwed up some searches
           continue 
@@ -431,7 +431,7 @@ class PlexMovieAgent(Agent.Movies):
         if len(elements) == 3:
           metadata.originally_available_at = Datetime.ParseDate(movie.get('originally_available_at')).date()
       
-    #************START NEW SECTION****************
+      #************START NEW SECTION****************
       
       #title in language (lang)
       for titolo in movie.xpath('title'):
@@ -446,6 +446,7 @@ class PlexMovieAgent(Agent.Movies):
       metadata.tagline=metadata.original_title
       
       #************END NEW SECTION****************      
+    
     except:
       print "Error obtaining Plex movie data for", guid
 
@@ -497,3 +498,4 @@ class PlexMovieAgent(Agent.Movies):
       return imdbName
     
     return None
+    
